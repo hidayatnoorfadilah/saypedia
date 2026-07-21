@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SAY PEDIA STORE</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* VARIABLES UNTUK DYNAMIC THEMING */
+    :root {
+      --bg-color: #0b0f19;
+      --text-color: #e2e8f0;
+      --card-bg: rgba(21, 27, 38, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --input-bg: #111827;
+      --text-muted: #9ca3af;
+      --neon-accent: #00ffaa;
+      --navbar-bg: rgba(15, 23, 42, 0.8);
+    }
+
+    /* LIGHT MODE OVERRIDE */
+    body.light-mode {
+      --bg-color: #f1f5f9;
+      --text-color: #0f172a;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --card-border: rgba(0, 0, 0, 0.08);
+      --input-bg: #ffffff;
+      --text-muted: #64748b;
+      --neon-accent: #00b377;
+      --navbar-bg: rgba(255, 255, 255, 0.85);
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+      border-color: var(--neon-accent);
+      box-shadow: 0 10px 30px rgba(0, 255, 170, 0.15);
+    }
+
+    .btn-neon {
+      background-color: var(--neon-accent);
+      color: #0b0f19;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    .btn-neon:hover {
+      opacity: 0.9;
+      box-shadow: 0 0 15px rgba(0, 255, 170, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .text-neon { color: var(--neon-accent); }
+    .border-neon { border-color: var(--neon-accent); }
+
+    .themed-input {
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      border-color: var(--card-border);
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-color); }
+    ::-webkit-scrollbar-thumb { background: #151b26; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--neon-accent); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- NAVBAR -->
+  <nav class="sticky top-0 z-40 glass-card border-b border-gray-800/20 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2 cursor-pointer" onclick="switchTab('katalog')">
+        <i class="fa-solid fa-bolt text-neon text-2xl"></i>
+        <span class="font-extrabold text-xl tracking-wider">SAY PEDIA <span class="text-neon">STORE</span></span>
+      </div>
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <button onclick="switchTab('katalog')" class="px-3 py-1.5 rounded-lg text-sm font-medium hover:text-neon transition">
+          <i class="fa-solid fa-store mr-1"></i> Katalog
+        </button>
+        <button onclick="switchTab('lacak')" class="px-3 py-1.5 rounded-lg text-sm font-medium hover:text-neon transition">
+          <i class="fa-solid fa-magnifying-glass mr-1"></i> Lacak
+        </button>
+        <button onclick="openAdminModal()" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-800/20 hover:text-neon transition border border-gray-700/30">
+          <i class="fa-solid fa-user-shield mr-1"></i> Admin
+        </button>
+        <!-- TOGGLE THEME BUTTON -->
+        <button onclick="toggleManualTheme()" id="theme-toggle-btn" title="Ubah Tema" class="px-3 py-1.5 rounded-lg text-sm bg-gray-800/30 hover:text-neon transition border border-gray-700/30">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-6xl mx-auto p-4 sm:p-6 w-full flex-grow">
+
+    <!-- VIEW 1: KATALOG PRODUK -->
+    <section id="view-katalog" class="space-y-6">
+      <!-- Search & Filter Bar -->
+      <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div class="relative w-full md:w-96">
+          <i class="fa-solid fa-search absolute left-3 top-3.5 opacity-50"></i>
+          <input type="text" id="search-input" oninput="debounceSearch()" placeholder="Cari produk premium..." 
+                 class="w-full themed-input border rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-neon">
+        </div>
+        <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+          <button onclick="filterCategory('All')" class="cat-btn bg-gray-800/20 px-4 py-1.5 rounded-lg text-sm hover:bg-neon hover:text-black font-medium transition border border-gray-700/30">Semua</button>
+          <button onclick="filterCategory('Digital')" class="cat-btn bg-gray-800/20 px-4 py-1.5 rounded-lg text-sm hover:bg-neon hover:text-black font-medium transition border border-gray-700/30">Digital</button>
+          <button onclick="filterCategory('Aplikasi')" class="cat-btn bg-gray-800/20 px-4 py-1.5 rounded-lg text-sm hover:bg-neon hover:text-black font-medium transition border border-gray-700/30">Aplikasi</button>
+        </div>
+      </div>
+
+      <!-- Grid Produk -->
+      <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- JS Inject -->
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-center items-center gap-4 mt-8">
+        <button id="btn-prev" onclick="changePage(-1)" class="px-4 py-2 glass-card rounded-lg hover:text-neon disabled:opacity-30" disabled>
+          <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+        </button>
+        <span id="page-info" class="text-sm font-semibold opacity-70">Halaman 1</span>
+        <button id="btn-next" onclick="changePage(1)" class="px-4 py-2 glass-card rounded-lg hover:text-neon disabled:opacity-30" disabled>
+          Next <i class="fa-solid fa-chevron-right ml-1"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW 2: LACAK PESANAN -->
+    <section id="view-lacak" class="hidden max-w-2xl mx-auto space-y-6">
+      <div class="glass-card p-6 rounded-2xl text-center space-y-4">
+        <i class="fa-solid fa-truck-fast text-4xl text-neon"></i>
+        <h2 class="text-2xl font-bold">Lacak Status Pesanan</h2>
+        <p class="text-sm opacity-70">Masukkan ID Transaksi (cth: CUST-260721-0001) atau Nomor WhatsApp Anda.</p>
+        <div class="flex gap-2">
+          <input type="text" id="track-input" placeholder="Masukkan ID / Nomor HP..." 
+                 class="w-full themed-input border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-neon">
+          <button onclick="doTrackOrder()" class="btn-neon px-6 py-2.5 rounded-lg flex items-center gap-2">
+            <i class="fa-solid fa-magnifying-glass"></i> Cari
+          </button>
+        </div>
+      </div>
+
+      <div id="track-result" class="space-y-4">
+        <!-- Hasil pencarian -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL ORDER / CHECKOUT -->
+  <div id="modal-order" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-md w-full rounded-2xl p-6 space-y-4 border">
+      <div class="flex justify-between items-center border-b border-gray-700/30 pb-3">
+        <h3 class="font-bold text-lg">Form Pemesanan</h3>
+        <button onclick="closeModal('modal-order')" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs opacity-70 block mb-1">Produk Dipilih</label>
+          <input type="text" id="ord-product-name" readonly class="w-full themed-input border text-neon font-semibold rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs opacity-70 block mb-1">Jumlah (Qty)</label>
+            <input type="number" id="ord-qty" value="1" min="1" oninput="calculateTotal()" class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon">
+          </div>
+          <div>
+            <label class="text-xs opacity-70 block mb-1">Total Harga</label>
+            <input type="text" id="ord-total-price" readonly class="w-full themed-input border font-bold rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs opacity-70 block mb-1">Nama Lengkap Pembeli</label>
+          <input type="text" id="ord-name" placeholder="Contoh: Budi Santoso" class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon">
+        </div>
+        <div>
+          <label class="text-xs opacity-70 block mb-1">Nomor WhatsApp</label>
+          <input type="tel" id="ord-wa" placeholder="Contoh: 081234567890" class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon">
+        </div>
+        <div>
+          <label class="text-xs opacity-70 block mb-1">Catatan Tambahan (Opsional)</label>
+          <textarea id="ord-note" rows="2" placeholder="Catatan khusus..." class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon"></textarea>
+        </div>
+      </div>
+      <button onclick="submitOrder()" class="w-full btn-neon py-3 rounded-lg flex items-center justify-center gap-2 mt-4">
+        <i class="fa-brands fa-whatsapp text-lg"></i> Kirim & Order via WhatsApp
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN AUTH & DASHBOARD -->
+  <div id="modal-admin" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-4xl w-full max-h-[90vh] rounded-2xl p-6 flex flex-col border overflow-hidden">
+      
+      <!-- Login View -->
+      <div id="admin-auth-view" class="space-y-4 max-w-sm mx-auto my-auto py-8 text-center">
+        <i class="fa-solid fa-lock text-4xl text-neon"></i>
+        <h3 class="text-xl font-bold">Proteksi Admin SAY PEDIA</h3>
+        <p class="text-xs opacity-70">Masukkan password admin untuk mengakses dashboard.</p>
+        <input type="password" id="admin-pass-input" placeholder="Password Admin" 
+               class="w-full themed-input border rounded-lg px-4 py-2.5 text-center text-sm focus:border-neon">
+        <button onclick="loginAdmin()" class="w-full btn-neon py-2.5 rounded-lg">Masuk Dashboard</button>
+        <button onclick="closeModal('modal-admin')" class="text-xs opacity-50 hover:opacity-100">Batal</button>
+      </div>
+
+      <!-- Dashboard View -->
+      <div id="admin-dash-view" class="hidden flex-col h-full space-y-4 overflow-hidden">
+        <div class="flex justify-between items-center border-b border-gray-700/30 pb-3">
+          <div class="flex items-center gap-3">
+            <h3 class="font-bold text-lg">Dashboard Admin</h3>
+            <span class="text-xs px-2 py-0.5 rounded bg-neon/20 text-neon font-semibold">ONLINE</span>
+          </div>
+          <button onclick="closeModal('modal-admin')" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-xmark text-xl"></i></button>
+        </div>
+
+        <div class="flex border-b border-gray-700/30 gap-4">
+          <button onclick="switchAdminTab('orders')" id="tab-btn-orders" class="pb-2 text-sm font-semibold border-b-2 border-neon text-neon">Kelola Pesanan</button>
+          <button onclick="switchAdminTab('products')" id="tab-btn-products" class="pb-2 text-sm font-semibold opacity-60 border-b-2 border-transparent">Kelola Produk</button>
+        </div>
+
+        <!-- Admin Section: Orders -->
+        <div id="admin-sec-orders" class="flex-grow overflow-y-auto space-y-3 pr-1">
+          <!-- Filter Badge Status Pesanan -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-gray-700/30 text-xs">
+            <button onclick="filterAdminOrderStatus('All')" id="btn-st-all" class="px-3 py-1 rounded-full font-semibold bg-neon text-black">Semua</button>
+            <button onclick="filterAdminOrderStatus('Pending')" id="btn-st-pending" class="px-3 py-1 rounded-full font-semibold bg-gray-800/20 border border-gray-700/30">Menunggu (Pending)</button>
+            <button onclick="filterAdminOrderStatus('Diproses')" id="btn-st-diproses" class="px-3 py-1 rounded-full font-semibold bg-gray-800/20 border border-gray-700/30">Diproses</button>
+            <button onclick="filterAdminOrderStatus('Selesai')" id="btn-st-selesai" class="px-3 py-1 rounded-full font-semibold bg-gray-800/20 border border-gray-700/30">Selesai</button>
+            <button onclick="filterAdminOrderStatus('Dibatalkan')" id="btn-st-dibatalkan" class="px-3 py-1 rounded-full font-semibold bg-gray-800/20 border border-gray-700/30">Dibatalkan</button>
+          </div>
+
+          <!-- Container List Pesanan -->
+          <div id="admin-orders-list" class="space-y-3 pt-2">
+            <!-- Inject Order Cards -->
+          </div>
+        </div>
+
+        <!-- Admin Section: Products -->
+        <div id="admin-sec-products" class="hidden flex-grow overflow-y-auto space-y-4 pr-1">
+          <button onclick="openProductForm()" class="btn-neon px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> Tambah Produk Baru
+          </button>
+          <div id="admin-products-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Inject Product List -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL FORM PRODUK (TAMBAH / EDIT) -->
+  <div id="modal-product-form" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-md w-full rounded-2xl p-6 space-y-4 border">
+      <div class="flex justify-between items-center border-b border-gray-700/30 pb-3">
+        <h3 id="form-product-title" class="font-bold text-lg">Tambah Produk</h3>
+        <button onclick="closeModal('modal-product-form')" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      <div class="space-y-3">
+        <input type="hidden" id="prd-id">
+        <div>
+          <label class="text-xs opacity-70 block mb-1">Nama Produk</label>
+          <input type="text" id="prd-nama" class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs opacity-70 block mb-1">Kategori</label>
+            <select id="prd-kategori" class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon">
+              <option value="Digital">Digital</option>
+              <option value="Aplikasi">Aplikasi</option>
+              <option value="Voucher">Voucher</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs opacity-70 block mb-1">Stok</label>
+            <input type="number" id="prd-stok" min="0" class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs opacity-70 block mb-1">Harga (Rp)</label>
+          <input type="number" id="prd-harga" min="0" class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon">
+        </div>
+        <div>
+          <label class="text-xs opacity-70 block mb-1">URL Gambar</label>
+          <input type="text" id="prd-img" placeholder="https://..." class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon">
+        </div>
+        <div>
+          <label class="text-xs opacity-70 block mb-1">Deskripsi</label>
+          <textarea id="prd-deskripsi" rows="3" class="w-full themed-input border rounded-lg px-3 py-2 text-sm focus:border-neon"></textarea>
+        </div>
+      </div>
+      <button onclick="submitProductForm()" class="w-full btn-neon py-2.5 rounded-lg mt-4">Simpan Produk</button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="glass-card border-t border-gray-700/30 py-6 mt-12 text-center text-xs opacity-60">
+    <p>&copy; 2026 SAY PEDIA STORE. All rights reserved. Fast & Trusted Premium Services.</p>
+  </footer>
+
+  <!-- SCRIPT LOGIC FRONTEND -->
+  <script>
+    // GLOBAL STATES
+    var currentPage = 1;
+    var currentCategory = "All";
+    var searchQuery = "";
+    var selectedProduct = null;
+    var adminPassword = "";
+    var searchTimeout = null;
+    
+    // ADMIN FILTER STATES
+    var currentAdminOrders = [];
+    var currentAdminFilter = "All";
+
+    // UNIVERSAL BACKEND RUNNER (Support Google Apps Script + Vercel)
+    function callBackend(funcName, onSuccess, onError, params) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        var runner = google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler(onError || function(err) { alert("Error: " + err.message); });
+        
+        if (params && params.length > 0) {
+          runner[funcName].apply(runner, params);
+        } else {
+          runner[funcName]();
+        }
+      } else {
+        // Otomatis mengambil URL deployment tempat aplikasi dijalankan saat ini
+        var currentGasUrl = window.location.href.split('?')[0].split('#')[0];
+
+        fetch(currentGasUrl, {
+          method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ funcName: funcName, params: params || [] })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+          if (res.status === 'success') {
+            onSuccess(res.data);
+          } else {
+            if (onError) onError(res);
+            else alert("Error Server: " + res.message);
+          }
+        })
+        .catch(function(err) {
+          console.error("Fetch Error:", err);
+          if (onError) onError(err);
+          else alert("Gagal terhubung ke Database Google Sheets! Pastikan pengaksesan diatur ke 'Anyone'.");
+        });
+      }
+    }
+
+    // AUTO-THEME DETECTION SYSTEM
+    function initThemeSystem() {
+      var savedTheme = localStorage.getItem("saypedia_theme");
+      
+      if (savedTheme) {
+        applyTheme(savedTheme === "light");
+      } else {
+        var prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+        applyTheme(prefersLight);
+      }
+
+      window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", function(e) {
+        if (!localStorage.getItem("saypedia_theme")) {
+          applyTheme(e.matches);
+        }
+      });
+    }
+
+    function applyTheme(isLight) {
+      var icon = document.querySelector("#theme-toggle-btn i");
+      if (isLight) {
+        document.body.classList.add("light-mode");
+        if (icon) icon.className = "fa-solid fa-sun text-amber-500";
+      } else {
+        document.body.classList.remove("light-mode");
+        if (icon) icon.className = "fa-solid fa-moon text-neon";
+      }
+    }
+
+    function toggleManualTheme() {
+      var isCurrentLight = document.body.classList.contains("light-mode");
+      var newIsLight = !isCurrentLight;
+      localStorage.setItem("saypedia_theme", newIsLight ? "light" : "dark");
+      applyTheme(newIsLight);
+    }
+
+    // INITIALIZATION
+    document.addEventListener("DOMContentLoaded", function() {
+      initThemeSystem();
+      loadProducts();
+    });
+
+    // VIEW SWITCHER
+    function switchTab(tab) {
+      document.getElementById("view-katalog").classList.add("hidden");
+      document.getElementById("view-lacak").classList.add("hidden");
+
+      if (tab === 'katalog') {
+        document.getElementById("view-katalog").classList.remove("hidden");
+      } else if (tab === 'lacak') {
+        document.getElementById("view-lacak").classList.remove("hidden");
+      }
+    }
+
+    // LOAD PRODUCTS WITH PAGINATION
+    function loadProducts() {
+      var grid = document.getElementById("product-grid");
+      grid.innerHTML = '<div class="col-span-full text-center py-12 opacity-60"><i class="fa-solid fa-circle-notch fa-spin text-3xl text-neon mb-2"></i><p>Memuat Katalog Produk...</p></div>';
+
+      callBackend('getProductsPaged', function(res) {
+        renderProducts(res.items);
+        document.getElementById("page-info").innerText = "Halaman " + res.currentPage + " dari " + res.totalPages;
+        document.getElementById("btn-prev").disabled = (res.currentPage <= 1);
+        document.getElementById("btn-next").disabled = (res.currentPage >= res.totalPages);
+      }, null, [currentPage, 9, searchQuery, currentCategory]);
+    }
+
+    function renderProducts(items) {
+      var grid = document.getElementById("product-grid");
+      grid.innerHTML = "";
+
+      if (!items || items.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center py-12 opacity-50"><i class="fa-solid fa-box-open text-4xl mb-2"></i><p>Produk tidak ditemukan.</p></div>';
+        return;
+      }
+
+      for (var i = 0; i < items.length; i++) {
+        var p = items[i];
+        var card = document.createElement("div");
+        card.className = "glass-card rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300";
+
+        var isOutOfStock = (p.stok <= 0);
+        var btnHtml = isOutOfStock ? 
+          '<button disabled class="w-full bg-gray-500/20 text-gray-400 py-2.5 rounded-lg font-semibold text-sm cursor-not-allowed">Stok Habis</button>' : 
+          '<button onclick="openOrderModal(' + JSON.stringify(p).replace(/"/g, '&quot;') + ')" class="w-full btn-neon py-2.5 rounded-lg text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-cart-shopping"></i> Beli Sekarang</button>';
+
+        var html = '';
+        html += '<div class="relative h-48 bg-gray-900/40 overflow-hidden">';
+        html += '  <img src="' + p.img + '" alt="' + p.nama + '" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.src=\'https://via.placeholder.com/400x250?text=SAY+PEDIA\'">';
+        html += '  <span class="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-neon text-xs font-semibold px-2.5 py-1 rounded-full border border-neon/30">' + p.kategori + '</span>';
+        html += '</div>';
+        html += '<div class="p-5 flex-grow flex flex-col justify-between space-y-4">';
+        html += '  <div>';
+        html += '    <h3 class="font-bold text-lg mb-1 line-clamp-1">' + p.nama + '</h3>';
+        html += '    <p class="text-xs opacity-70 line-clamp-2 mb-3">' + p.deskripsi + '</p>';
+        html += '    <div class="flex justify-between items-center text-sm mb-2">';
+        html += '      <span class="text-neon font-extrabold text-lg">Rp ' + Number(p.harga).toLocaleString('id-ID') + '</span>';
+        html += '      <span class="text-xs opacity-70">Sisa Stok: <b class="' + (p.stok > 0 ? 'text-neon' : 'text-red-400') + '">' + p.stok + '</b></span>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '  <div>' + btnHtml + '</div>';
+        html += '</div>';
+
+        card.innerHTML = html;
+        grid.appendChild(card);
+      }
+    }
+
+    // SEARCH & FILTER HANDLERS
+    function debounceSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(function() {
+        searchQuery = document.getElementById("search-input").value;
+        currentPage = 1;
+        loadProducts();
+      }, 400);
+    }
+
+    function filterCategory(cat) {
+      currentCategory = cat;
+      currentPage = 1;
+      loadProducts();
+    }
+
+    function changePage(delta) {
+      currentPage += delta;
+      loadProducts();
+    }
+
+    // ORDER MODAL & WA CHECKOUT
+    function openOrderModal(product) {
+      selectedProduct = product;
+      document.getElementById("ord-product-name").value = product.nama;
+      document.getElementById("ord-qty").value = 1;
+      calculateTotal();
+      document.getElementById("modal-order").classList.remove("hidden");
+    }
+
+    function calculateTotal() {
+      if (!selectedProduct) return;
+      var qty = parseInt(document.getElementById("ord-qty").value) || 1;
+      var total = qty * Number(selectedProduct.harga);
+      document.getElementById("ord-total-price").value = "Rp " + total.toLocaleString('id-ID');
+    }
+
+    function submitOrder() {
+      var name = document.getElementById("ord-name").value.trim();
+      var wa = document.getElementById("ord-wa").value.trim();
+      var qty = parseInt(document.getElementById("ord-qty").value) || 1;
+      var note = document.getElementById("ord-note").value.trim();
+
+      if (!name || !wa) {
+        alert("Mohon isi Nama Lengkap dan Nomor WhatsApp!");
+        return;
+      }
+
+      var totalHargaNum = qty * Number(selectedProduct.harga);
+      var orderPayload = {
+        productId: selectedProduct.id,
+        productName: selectedProduct.nama,
+        qty: qty,
+        totalPrice: totalHargaNum,
+        customerName: name,
+        customerWa: wa,
+        note: note
+      };
+
+      callBackend('createOrder', function(res) {
+        closeModal('modal-order');
+        
+        var adminWa = "6285888011755";
+        var msg = "";
+        msg += "Halo Admin *SAY PEDIA STORE*, Saya ingin konfirmasi pesanan:\n\n";
+        msg += "🆔 *ID Transaksi:* " + res.trxId + "\n";
+        msg += "📦 *Produk:* " + selectedProduct.nama + "\n";
+        msg += "🔢 *Jumlah:* " + qty + " pcs\n";
+        msg += "💰 *Total Harga:* Rp " + totalHargaNum.toLocaleString('id-ID') + "\n";
+        msg += "👤 *Nama Pembeli:* " + name + "\n";
+        msg += "📱 *No. WA:* " + wa + "\n";
+        msg += "📝 *Catatan:* " + (note || "-") + "\n\n";
+        msg += "Mohon segera diproses ya kak, Terima Kasih!";
+
+        var waUrl = "https://wa.me/" + adminWa + "?text=" + encodeURIComponent(msg);
+        window.open(waUrl, '_blank');
+
+        document.getElementById("ord-name").value = "";
+        document.getElementById("ord-wa").value = "";
+        document.getElementById("ord-note").value = "";
+        loadProducts();
+      }, null, [orderPayload]);
+    }
+
+    // TRACK ORDER
+    function doTrackOrder() {
+      var query = document.getElementById("track-input").value.trim();
+      var resDiv = document.getElementById("track-result");
+      if (!query) return;
+
+      resDiv.innerHTML = '<p class="text-center opacity-60 py-4"><i class="fa-solid fa-spin fa-circle-notch mr-2"></i>Mencari pesanan...</p>';
+
+      callBackend('trackOrder', function(items) {
+        resDiv.innerHTML = "";
+        if (!items || items.length === 0) {
+          resDiv.innerHTML = '<div class="glass-card p-4 rounded-xl text-center opacity-60">Data pesanan tidak ditemukan.</div>';
+          return;
+        }
+
+        for (var i = 0; i < items.length; i++) {
+          var o = items[i];
+          var badgeClass = "bg-yellow-500/20 text-yellow-500 border-yellow-500/30";
+          if (o.status === 'Selesai') badgeClass = "bg-green-500/20 text-green-500 border-green-500/30";
+          if (o.status === 'Dibatalkan') badgeClass = "bg-red-500/20 text-red-500 border-red-500/30";
+          if (o.status === 'Diproses') badgeClass = "bg-blue-500/20 text-blue-500 border-blue-500/30";
+
+          var card = document.createElement("div");
+          card.className = "glass-card p-5 rounded-xl space-y-3";
+          
+          var html = '';
+          html += '<div class="flex justify-between items-center border-b border-gray-700/30 pb-2">';
+          html += '  <span class="font-mono text-xs text-neon font-bold">' + o.trxId + '</span>';
+          html += '  <span class="text-xs px-2.5 py-1 rounded-full border font-semibold ' + badgeClass + '">' + o.status + '</span>';
+          html += '</div>';
+          html += '<div class="text-sm space-y-1">';
+          html += '  <p class="font-bold">' + o.namaProduk + ' (' + o.qty + 'x)</p>';
+          html += '  <p class="text-xs opacity-70">Pemesan: ' + o.nama + ' (' + o.wa + ')</p>';
+          html += '  <p class="text-xs opacity-70">Tanggal: ' + o.tanggal + '</p>';
+          html += '  <p class="text-xs text-neon font-bold mt-1">Total: ' + o.total + '</p>';
+          html += '</div>';
+
+          card.innerHTML = html;
+          resDiv.appendChild(card);
+        }
+      }, null, [query]);
+    }
+
+    // ADMIN MANAGEMENT
+    function openAdminModal() {
+      document.getElementById("admin-auth-view").classList.remove("hidden");
+      document.getElementById("admin-dash-view").classList.add("hidden");
+      document.getElementById("modal-admin").classList.remove("hidden");
+    }
+
+    function loginAdmin() {
+      var pass = document.getElementById("admin-pass-input").value;
+      callBackend('verifyAdmin', function(isValid) {
+        if (isValid) {
+          adminPassword = pass;
+          document.getElementById("admin-pass-input").value = "";
+          document.getElementById("admin-auth-view").classList.add("hidden");
+          document.getElementById("admin-dash-view").classList.remove("hidden");
+          document.getElementById("admin-dash-view").classList.add("flex");
+          loadAdminOrders();
+        } else {
+          alert("Password Admin Salah!");
+        }
+      }, null, [pass]);
+    }
+
+    function switchAdminTab(tab) {
+      document.getElementById("admin-sec-orders").classList.add("hidden");
+      document.getElementById("admin-sec-products").classList.add("hidden");
+      document.getElementById("tab-btn-orders").className = "pb-2 text-sm font-semibold opacity-60 border-b-2 border-transparent";
+      document.getElementById("tab-btn-products").className = "pb-2 text-sm font-semibold opacity-60 border-b-2 border-transparent";
+
+      if (tab === 'orders') {
+        document.getElementById("admin-sec-orders").classList.remove("hidden");
+        document.getElementById("tab-btn-orders").className = "pb-2 text-sm font-semibold border-b-2 border-neon text-neon";
+        loadAdminOrders();
+      } else {
+        document.getElementById("admin-sec-products").classList.remove("hidden");
+        document.getElementById("tab-btn-products").className = "pb-2 text-sm font-semibold border-b-2 border-neon text-neon";
+        loadAdminProducts();
+      }
+    }
+
+    function filterAdminOrderStatus(status) {
+      currentAdminFilter = status;
+      
+      var statusList = ['all', 'pending', 'diproses', 'selesai', 'dibatalkan'];
+      for (var i = 0; i < statusList.length; i++) {
+        var btn = document.getElementById("btn-st-" + statusList[i]);
+        if (btn) {
+          btn.className = "px-3 py-1 rounded-full font-semibold bg-gray-800/20 border border-gray-700/30";
+        }
+      }
+      
+      var activeBtn = document.getElementById("btn-st-" + status.toLowerCase());
+      if (activeBtn) {
+        activeBtn.className = "px-3 py-1 rounded-full font-semibold bg-neon text-black";
+      }
+
+      renderAdminOrders();
+    }
+
+    function loadAdminOrders() {
+      var container = document.getElementById("admin-orders-list");
+      container.innerHTML = '<p class="text-center py-8 opacity-60"><i class="fa-solid fa-spin fa-circle-notch mr-2"></i> Memuat Pesanan...</p>';
+
+      callBackend('getAllOrdersAdmin', function(orders) {
+        currentAdminOrders = orders || [];
+        renderAdminOrders();
+      }, null, [adminPassword]);
+    }
+
+    function renderAdminOrders() {
+      var container = document.getElementById("admin-orders-list");
+      container.innerHTML = "";
+
+      var filteredOrders = [];
+      for (var i = 0; i < currentAdminOrders.length; i++) {
+        var ord = currentAdminOrders[i];
+        if (currentAdminFilter === "All" || ord.status === currentAdminFilter) {
+          filteredOrders.push(ord);
+        }
+      }
+
+      if (filteredOrders.length === 0) {
+        container.innerHTML = '<p class="text-center opacity-50 py-8">Tidak ada pesanan dengan status ' + currentAdminFilter + '.</p>';
+        return;
+      }
+
+      for (var i = 0; i < filteredOrders.length; i++) {
+        var o = filteredOrders[i];
+        var card = document.createElement("div");
+        card.className = "glass-card p-4 rounded-xl border flex flex-col md:flex-row justify-between md:items-center gap-3";
+
+        var statusOptions = ['Pending', 'Diproses', 'Selesai', 'Dibatalkan'];
+        var selectHtml = '<select onchange="changeOrderStatus(' + o.rowIndex + ', this.value)" class="themed-input border text-xs text-neon font-semibold rounded px-2.5 py-1.5 focus:outline-none focus:border-neon">';
+        for (var j = 0; j < statusOptions.length; j++) {
+          var st = statusOptions[j];
+          var sel = (st === o.status) ? 'selected' : '';
+          selectHtml += '<option value="' + st + '" ' + sel + '>' + st + '</option>';
+        }
+        selectHtml += '</select>';
+
+        var html = '';
+        html += '<div>';
+        html += '  <div class="flex items-center gap-2 mb-1">';
+        html += '    <span class="font-mono text-xs text-neon font-bold">' + o.trxId + '</span>';
+        html += '    <span class="text-xs opacity-50">' + o.tanggal + '</span>';
+        html += '  </div>';
+        html += '  <p class="font-bold text-sm">' + o.namaProduk + ' (' + o.qty + 'x) - ' + o.total + '</p>';
+        html += '  <p class="text-xs opacity-70">Pembeli: ' + o.nama + ' (' + o.wa + ')</p>';
+        if (o.catatan && o.catatan !== '-') {
+          html += '  <p class="text-xs text-amber-500 mt-1">Catatan: ' + o.catatan + '</p>';
+        }
+        html += '</div>';
+        html += '<div class="flex items-center gap-2">' + selectHtml + '</div>';
+
+        card.innerHTML = html;
+        container.appendChild(card);
+      }
+    }
+
+    function changeOrderStatus(rowIndex, newStatus) {
+      callBackend('updateOrderStatusAdmin', function() {
+        loadAdminOrders();
+      }, null, [adminPassword, rowIndex, newStatus]);
+    }
+
+    function loadAdminProducts() {
+      callBackend('getProductsPaged', function(res) {
+        var items = res.items || [];
+        var container = document.getElementById("admin-products-list");
+        container.innerHTML = "";
+
+        for (var i = 0; i < items.length; i++) {
+          var p = items[i];
+          var card = document.createElement("div");
+          card.className = "glass-card p-4 rounded-xl border flex justify-between items-center";
+
+          var html = '';
+          html += '<div class="flex items-center gap-3">';
+          html += '  <img src="' + p.img + '" class="w-12 h-12 object-cover rounded-lg" onerror="this.src=\'https://via.placeholder.com/100\'">';
+          html += '  <div>';
+          html += '    <h4 class="font-bold text-sm">' + p.nama + '</h4>';
+          html += '    <p class="text-xs text-neon">Rp ' + Number(p.harga).toLocaleString('id-ID') + ' | Stok: ' + p.stok + '</p>';
+          html += '  </div>';
+          html += '</div>';
+          html += '<div class="flex gap-2">';
+          html += '  <button onclick="openProductForm(' + JSON.stringify(p).replace(/"/g, '&quot;') + ')" class="px-2.5 py-1 text-xs bg-blue-500/20 text-blue-500 rounded hover:bg-blue-500/40"><i class="fa-solid fa-pen"></i></button>';
+          html += '  <button onclick="deleteProduct(\'' + p.id + '\')" class="px-2.5 py-1 text-xs bg-red-500/20 text-red-500 rounded hover:bg-red-500/40"><i class="fa-solid fa-trash"></i></button>';
+          html += '</div>';
+
+          card.innerHTML = html;
+          container.appendChild(card);
+        }
+      }, null, [1, 100, "", "All"]);
+    }
+
+    function openProductForm(product) {
+      if (product) {
+        document.getElementById("form-product-title").innerText = "Edit Produk";
+        document.getElementById("prd-id").value = product.id;
+        document.getElementById("prd-nama").value = product.nama;
+        document.getElementById("prd-kategori").value = product.kategori;
+        document.getElementById("prd-stok").value = product.stok;
+        document.getElementById("prd-harga").value = product.harga;
+        document.getElementById("prd-img").value = product.img;
+        document.getElementById("prd-deskripsi").value = product.deskripsi;
+      } else {
+        document.getElementById("form-product-title").innerText = "Tambah Produk Baru";
+        document.getElementById("prd-id").value = "";
+        document.getElementById("prd-nama").value = "";
+        document.getElementById("prd-kategori").value = "Digital";
+        document.getElementById("prd-stok").value = 10;
+        document.getElementById("prd-harga").value = 10000;
+        document.getElementById("prd-img").value = "";
+        document.getElementById("prd-deskripsi").value = "";
+      }
+      document.getElementById("modal-product-form").classList.remove("hidden");
+    }
+
+    function submitProductForm() {
+      var payload = {
+        id: document.getElementById("prd-id").value,
+        nama: document.getElementById("prd-nama").value.trim(),
+        kategori: document.getElementById("prd-kategori").value,
+        stok: parseInt(document.getElementById("prd-stok").value) || 0,
+        harga: parseInt(document.getElementById("prd-harga").value) || 0,
+        img: document.getElementById("prd-img").value.trim(),
+        deskripsi: document.getElementById("prd-deskripsi").value.trim()
+      };
+
+      if (!payload.nama || !payload.harga) {
+        alert("Nama Produk dan Harga wajib diisi!");
+        return;
+      }
+
+      callBackend('saveProductAdmin', function() {
+        closeModal('modal-product-form');
+        loadAdminProducts();
+        loadProducts();
+      }, null, [adminPassword, payload]);
+    }
+
+    function deleteProduct(id) {
+      if (!confirm("Yakin ingin menghapus produk ini?")) return;
+      callBackend('deleteProductAdmin', function() {
+        loadAdminProducts();
+        loadProducts();
+      }, null, [adminPassword, id]);
+    }
+
+    // UTILS
+    function closeModal(id) {
+      document.getElementById(id).classList.add("hidden");
+    }
+  </script>
+</body>
+</html>
